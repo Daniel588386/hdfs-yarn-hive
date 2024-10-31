@@ -1,61 +1,48 @@
+version: '3'
 services:
   namenode:
-    image: apache/hadoop:3.3.5
-    container_name: namenode
-    hostname: namenode
-    user: root
-    environment:
-      - HADOOP_HOME=/opt/hadoop
+    build:
+      context: ./hadoop
+      dockerfile: Dockerfile
     volumes:
-      - ./hadoop_namenode:/opt/hadoop/data/nameNode
-      - ./hadoop_config:/opt/hadoop/etc/hadoop
-      - ./start-hdfs.sh:/start-hdfs.sh
+      - namenode_data:/hadoop/dfs/name
     ports:
       - "9870:9870"
-    command: [ "/bin/bash", "/start-hdfs.sh" ]
-    networks:
-      hdfs_network:
-        ipv4_address: 172.20.0.2
-
-  datanode1:
-    image: apache/hadoop:3.3.5
-    container_name: datanode1
-    hostname: datanode1
-    user: root
     environment:
-      - HADOOP_HOME=/opt/hadoop
-    volumes:
-      - ./hadoop_datanode1:/opt/hadoop/data/dataNode
-      - ./hadoop_config:/opt/hadoop/etc/hadoop
-      - ./init-datanode.sh:/init-datanode.sh
-    depends_on:
-      - namenode
-    command: [ "/bin/bash", "/init-datanode.sh" ]
+      - CLUSTER_NAME=my-hadoop-cluster
     networks:
-      hdfs_network:
-        ipv4_address: 172.20.0.3
+      - hadoop_net
 
-  datanode2:
-    image: apache/hadoop:3.3.5
-    container_name: datanode2
-    hostname: datanode2
-    user: root
-    environment:
-      - HADOOP_HOME=/opt/hadoop
+  datanode:
+    build:
+      context: ./hadoop
+      dockerfile: Dockerfile
     volumes:
-      - ./hadoop_datanode2:/opt/hadoop/data/dataNode
-      - ./hadoop_config:/opt/hadoop/etc/hadoop
-      - ./init-datanode.sh:/init-datanode.sh
-    depends_on:
-      - namenode
-    command: [ "/bin/bash", "/init-datanode.sh" ]
+      - datanode_data:/hadoop/dfs/data
+    environment:
+      - CLUSTER_NAME=my-hadoop-cluster
     networks:
-      hdfs_network:
-        ipv4_address: 172.20.0.4
+      - hadoop_net
+
+  resource_manager:
+    build:
+      context: ./hadoop
+      dockerfile: Dockerfile
+    ports:
+      - "8088:8088"
+    networks:
+      - hadoop_net
+
+  node_manager:
+    build:
+      context: ./hadoop
+      dockerfile: Dockerfile
+    networks:
+      - hadoop_net
+
+volumes:
+  namenode_data:
+  datanode_data:
 
 networks:
-  hdfs_network:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.20.0.0/16
+  hadoop_net:
