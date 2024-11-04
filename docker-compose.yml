@@ -1,63 +1,69 @@
 version: '3.8'
 services:
-  namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
-    container_name: namenode
-    environment:
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
-      - CLUSTER_NAME=hadoop-cluster
-    ports:
-      - "9870:9870"
-      - "9000:9000"
-    volumes:
-      - hadoop_namenode:/hadoop/dfs/name
-    restart: always
+    namenode:
+      image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+      container_name: namenode
+      environment:
+        - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+        - CLUSTER_NAME=hadoop-cluster
+      ports:
+        - "9870:9870"
+        - "9000:9000"
+      volumes:
+        - hadoop_namenode:/hadoop/dfs/name
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:9870"]  # Revisa si el NameNode está activo
+        interval: 30s
+        timeout: 10s
+        retries: 5
+      restart: always
 
-  datanode:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: datanode
-    environment:
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
-    depends_on:
-      - namenode
-    ports:
-      - "9864:9864"
-    volumes:
-      - hadoop_datanode:/hadoop/dfs/data
-    restart: always
 
-  resourcemanager:
-    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
-    container_name: resourcemanager
-    environment:
-      - YARN_CONF_yarn_resourcemanager_hostname=resourcemanager
-    ports:
-      - "8088:8088"
-    depends_on:
-      - namenode
-    restart: always
+    datanode:
+      image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+      container_name: datanode
+      environment:
+        - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      depends_on:
+        - namenode
+      ports:
+        - "9864:9864"
+      volumes:
+        - hadoop_datanode:/hadoop/dfs/data
+      restart: always
 
-  nodemanager:
-    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
-    container_name: nodemanager
-    environment:
-      - YARN_CONF_yarn_resourcemanager_hostname=resourcemanager
-    depends_on:
-      - resourcemanager
-    restart: always
+    resourcemanager:
+      image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+      container_name: resourcemanager
+      environment:
+        - YARN_CONF_yarn_resourcemanager_hostname=resourcemanager
+      ports:
+        - "8088:8088"
+      depends_on:
+        - namenode
+      restart: always
 
-  historyserver:
-    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
-    container_name: historyserver
-    environment:
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
-      - YARN_CONF_yarn_resourcemanager_hostname=resourcemanager
-    depends_on:
-      - namenode
-      - resourcemanager
-    ports:
-      - "8188:8188"
-    restart: always
+    nodemanager:
+      image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+      container_name: nodemanager
+      environment:
+        - YARN_CONF_yarn_resourcemanager_hostname=resourcemanager
+      depends_on:
+        - resourcemanager
+      restart: always
+
+    historyserver:
+      image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+      container_name: historyserver
+      environment:
+        - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+        - YARN_CONF_yarn_resourcemanager_hostname=resourcemanager
+      depends_on:
+        - namenode
+        - resourcemanager
+      ports:
+        - "8188:8188"
+      restart: always
 
 volumes:
   hadoop_namenode:
